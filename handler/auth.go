@@ -5,20 +5,12 @@ import (
 	"encoding/hex"
 	"github.com/flosch/pongo2/v6"
 	"github.com/gorilla/sessions"
+	"github.com/pnunn/projectmotor/github"
 	"github.com/pnunn/projectmotor/template"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
 	"log"
 	"net/http"
 )
-
-var config = &oauth2.Config{
-	ClientID:     "0e590762d1dc627e801f",
-	ClientSecret: "fb369c7863ea205ab3a897f3af66986f9f83b30f",
-	Scopes:       []string{"read:user", "user:email"},
-	Endpoint:     github.Endpoint,
-}
 
 func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	template.Login.ExecuteWriter(pongo2.Context{}, w)
@@ -50,7 +42,7 @@ func (h Handler) OAuthGitHubLogin(w http.ResponseWriter, r *http.Request) {
 		fail(w, err, http.StatusInternalServerError)
 		return
 	}
-	url := config.AuthCodeURL(state)
+	url := github.Config.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -67,12 +59,20 @@ func (h Handler) OAuthGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	// Check if state matches between query and session
 	if stateMatches(state, session) {
 		// Exchange code for token
-		token, err := config.Exchange(context.Background(), code)
+		token, err := github.Config.Exchange(context.Background(), code)
+		if err != nil {
+			fail(w, err, http.StatusInternalServerError)
+			return
+		}
+		gh := github.New(token.AccessToken)
+		data, err := gh.GetData()
 		if err != nil {
 			fail(w, err, http.StatusInternalServerError)
 			return
 		}
 		log.Println("token: ", token.AccessToken)
+		log.Println("id: ", data.ID)
+		log.Println("primary email: ", data.PrimaryEmail)
 		return
 	}
 	fail(w, err, http.StatusUnauthorized)
