@@ -6,8 +6,8 @@ import (
 )
 
 type Account struct {
-	UserID      int32  `json:"userId" db:"id"`
-	ID          int32  `json:"Id" db:"user_id"`
+	UserID      int32  `json:"userId" db:"user_id"`
+	ID          string  `json:"id" db:"id"`
 	AccessToken string `json:"accessToken" db:"access_token"`
 }
 

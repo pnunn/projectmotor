@@ -69,11 +69,7 @@ func ProtectedCtx(h *handler.Handler) func(next http.Handler) http.Handler {
 			// check if user ID is int32
 			ctx := r.Context()
 			if userID, ok := userID.(int32); ok {
-				print("ID: ")
-				println(userID)
 				user, _, err := h.UserService.GetUserByID(userID)
-				print("User: ")
-				println(user.Name.String)
 				if err != nil {
 					redirectToLogin(w, r)
 					return
