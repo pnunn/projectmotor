@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"github.com/flosch/pongo2/v6"
 	"github.com/gorilla/sessions"
+	"github.com/pnunn/projectmotor/auth"
 	"github.com/pnunn/projectmotor/github"
 	"github.com/pnunn/projectmotor/template"
 	"golang.org/x/net/context"
-	"log"
 	"net/http"
 )
 
@@ -70,9 +70,49 @@ func (h Handler) OAuthGitHubCallback(w http.ResponseWriter, r *http.Request) {
 			fail(w, err, http.StatusInternalServerError)
 			return
 		}
-		log.Println("token: ", token.AccessToken)
-		log.Println("id: ", data.ID)
-		log.Println("primary email: ", data.PrimaryEmail)
+		// Check if account with ID exists
+		account, exists, err := h.AccountService.GetAccountByID(data.ID)
+		if err != nil {
+			fail(w, err, http.StatusInternalServerError)
+			return
+		}
+		if !exists {
+			// Begin transaction
+			tx, err := h.BeginTx(r.Context())
+			defer tx.Rollback()
+			if err != nil {
+				fail(w, err, http.StatusInternalServerError)
+				return
+			}
+			// Create user within transaction
+			user, err := h.UserService.CreateUser(tx, data.PrimaryEmail)
+			if err != nil {
+				fail(w, err, http.StatusInternalServerError)
+				return
+			}
+			// Create account within transaction
+			_, err = h.AccountService.CreateAccount(tx, data.ID, user.ID, token.AccessToken)
+			if err != nil {
+				fail(w, err, http.StatusInternalServerError)
+				return
+			}
+			// Commit transaction
+			err = tx.Commit()
+			if err != nil {
+				fail(w, err, http.StatusInternalServerError)
+				return
+			}
+			err = auth.SetUserSession(w, r, user.ID, session)
+			if err != nil {
+				fail(w, err, http.StatusInternalServerError)
+				return
+			}
+		}
+		err = auth.SetUserSession(w, r, account.UserID, session)
+		if err != nil {
+			fail(w, err, http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 	fail(w, err, http.StatusUnauthorized)

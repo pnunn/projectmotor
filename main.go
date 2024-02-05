@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/flosch/pongo2/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/sessions"
 	"github.com/pnunn/projectmotor/auth"
 	"github.com/pnunn/projectmotor/database"
 	"github.com/pnunn/projectmotor/handler"
-	"github.com/pnunn/projectmotor/template"
 	"log"
 	"net/http"
 )
@@ -62,16 +60,25 @@ func ProtectedCtx(h *handler.Handler) func(next http.Handler) http.Handler {
 				redirectToLogin(w, r)
 				return
 			}
-			user := session.Values["user"]
-			// redirect in case of missing user
-			if user == nil {
+			userID := session.Values["userID"]
+			// redirect in case of missing userID
+			if userID == nil {
 				redirectToLogin(w, r)
 				return
 			}
-			// check if user is db.User
+			// check if user ID is int32
 			ctx := r.Context()
-			if user, ok := user.(database.User); ok {
-				ctx = context.WithValue(ctx, auth.UserIDKey{}, user.ID)
+			if userID, ok := userID.(int32); ok {
+				print("ID: ")
+				println(userID)
+				user, _, err := h.UserService.GetUserByID(userID)
+				print("User: ")
+				println(user.Name.String)
+				if err != nil {
+					redirectToLogin(w, r)
+					return
+				}
+				ctx = context.WithValue(ctx, auth.UserKey{}, user)
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
@@ -85,18 +92,7 @@ func ProtectedCtx(h *handler.Handler) func(next http.Handler) http.Handler {
 func protectedRouter(h *handler.Handler) func(chi.Router) {
 	return func(r chi.Router) {
 		r.Use(ProtectedCtx(h))
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			//template.Dashboard.ExecuteWriter(pongo2.Context{}, w)
-			// NOTE ->> only for testing, remove after actual interactions with database
-			message, err := database.GetMessage()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			// <<- NOTE
-			template.Dashboard.ExecuteWriter(pongo2.Context{
-				"message": message,
-			}, w)
-		})
+		//r.Get("/projects", h.GetProjects)
+		r.Get("/", h.Dashboard)
 	}
 }
