@@ -88,7 +88,9 @@ func ProtectedCtx(h *handler.Handler) func(next http.Handler) http.Handler {
 func protectedRouter(h *handler.Handler) func(chi.Router) {
 	return func(r chi.Router) {
 		r.Use(ProtectedCtx(h))
-		//r.Get("/projects", h.GetProjects)
+		r.Get("/projects", h.GetProjects)
+		r.Post("/proqects", h.CreateProject)
+		r.Get("/projects/new", h.NewProject)
 		r.Get("/", h.Dashboard)
 	}
 }
