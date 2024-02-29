@@ -1,0 +1,9 @@
+package template
+
+import "github.com/pnunn/projectmotor/template/layout"
+
+templ Hello(name string) {
+    @layout.Base() {
+        <div>Hello, { name }</div>
+    }
+}
