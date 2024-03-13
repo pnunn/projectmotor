@@ -3,6 +3,7 @@ module github.com/pnunn/projectmotor
 go 1.21.5
 
 require (
+	github.com/a-h/templ v0.2.543
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
@@ -15,7 +16,6 @@ require (
 )
 
 require (
-	github.com/a-h/templ v0.2.543 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
@@ -27,6 +27,6 @@ require (
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
